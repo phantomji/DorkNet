@@ -1,12 +1,13 @@
 import tkinter as tk
-from tkinter import messagebox, simpledialog, Scrollbar, Canvas, Frame
+from tkinter import messagebox, simpledialog, Scrollbar, Canvas, Frame, filedialog, StringVar, OptionMenu
 import webbrowser
+import os
 
 class GoogleDorksTool:
     def __init__(self, root):
         self.root = root
         self.root.title("Google Dorks Search Tool")
-        self.root.geometry("700x700")
+        self.root.geometry("700x750")  # Increased height for additional widgets
         self.root.configure(bg='#000000')  # Dark background for hacker theme
         
         self.dorks = self.initialize_dorks()  # Initialize dorks
@@ -47,6 +48,13 @@ class GoogleDorksTool:
         self.entry = tk.Entry(frame, width=60, font=("Courier", 14), borderwidth=2, relief="flat")
         self.entry.pack(pady=10)
 
+        # Browser selection
+        self.browser_var = StringVar(value="default")
+        tk.Label(frame, text="Select browser:", font=("Courier", 14), bg='#000000', fg='white').pack(pady=10)
+        browser_menu = OptionMenu(frame, self.browser_var, "default", "chrome", "firefox", "brave")
+        browser_menu.config(font=("Courier", 12), bg='#00ff00', fg='black')
+        browser_menu.pack(pady=10)
+
         # Canvas and scrollbar for dork buttons
         self.canvas = Canvas(frame, bg='#000000', width=700)
         self.scrollbar = Scrollbar(frame, orient="vertical", command=self.canvas.yview)
@@ -60,8 +68,9 @@ class GoogleDorksTool:
         # Bind mouse wheel event to canvas
         self.root.bind_all("<MouseWheel>", self.on_mouse_wheel)
 
-        # Button to add new dorks
+        # Button to add new dorks and upload dorks file
         self.create_button(frame, "Add Multiple Dorks", self.add_dorks, '#00ff00')
+        self.create_button(frame, "Upload Dorks File", self.upload_dorks_file, '#00ff00')
 
         # Filter input field
         tk.Label(frame, text="Filter dorks:", font=("Courier", 14), bg='#000000', fg='white').pack(pady=10)
@@ -101,7 +110,41 @@ class GoogleDorksTool:
         query = f"{dork} {user_input}"
         url = f"https://www.google.com/search?q={query}"
         self.result_label.config(text=f"Search Query: {url}")
-        webbrowser.open_new_tab(url)
+
+        # Open URL in the selected browser
+        browser = self.browser_var.get()
+        if browser == "chrome":
+            self.open_in_chrome(url)
+        elif browser == "firefox":
+            self.open_in_firefox(url)
+        elif browser == "brave":
+            self.open_in_brave(url)
+        else:
+            webbrowser.open_new_tab(url)
+
+    def open_in_chrome(self, url):
+        try:
+            # Update path to Chrome executable as needed
+            chrome_path = "C:/Program Files/Google/Chrome/Application/chrome.exe %s"
+            webbrowser.get(chrome_path).open_new_tab(url)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open Chrome: {e}")
+
+    def open_in_firefox(self, url):
+        try:
+            # Update path to Firefox executable as needed
+            firefox_path = "C:/Program Files/Mozilla Firefox/firefox.exe %s"
+            webbrowser.get(firefox_path).open_new_tab(url)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open Firefox: {e}")
+
+    def open_in_brave(self, url):
+        try:
+            # Update path to Brave executable as needed
+            brave_path = "C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe %s"
+            webbrowser.get(brave_path).open_new_tab(url)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open Brave: {e}")
 
     def add_dorks(self):
         dorks_input = simpledialog.askstring("Add Google Dorks", "Enter new Google dorks (one per line):")
@@ -116,6 +159,25 @@ class GoogleDorksTool:
                     messagebox.showinfo("Duplicate Dork", f"The dork '{dork}' is already in the list.")
             self.dorks.sort()
             self.update_buttons()
+
+    def upload_dorks_file(self):
+        initial_dir = r"B:\database"  # Set initial directory for file dialog
+        file_path = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")], initialdir=initial_dir)
+        if file_path:
+            try:
+                with open(file_path, "r") as file:
+                    new_dorks = [line.strip() for line in file if line.strip()]
+                existing_dorks = set(self.dorks)
+                for dork in new_dorks:
+                    if dork and dork not in existing_dorks:
+                        self.dorks.append(dork)
+                        existing_dorks.add(dork)
+                    elif dork:
+                        messagebox.showinfo("Duplicate Dork", f"The dork '{dork}' is already in the list.")
+                self.dorks.sort()
+                self.update_buttons()
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to read file: {e}")
 
     def filter_dorks(self):
         filter_text = self.filter_entry.get().strip().lower()
@@ -134,11 +196,24 @@ class GoogleDorksTool:
         self.update_buttons(non_filetype_dorks)
 
     def on_mouse_wheel(self, event):
-        # Scroll canvas vertically
-        self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        # Scroll canvas vertically with limits
+        canvas_yview = self.canvas.yview()
+        if event.delta > 0:
+            # Scroll up
+            if canvas_yview[0] > 0:
+                self.canvas.yview_scroll(-1, "units")
+        elif event.delta < 0:
+            # Scroll down
+            if canvas_yview[1] < 1:
+                self.canvas.yview_scroll(1, "units")
 
-# Create and run the application
 if __name__ == "__main__":
     root = tk.Tk()
     app = GoogleDorksTool(root)
+    
+    # Register browsers with webbrowser module
+    webbrowser.register('chrome', webbrowser.BackgroundBrowser("C:/Program Files/Google/Chrome/Application/chrome.exe %s"))
+    webbrowser.register('firefox', webbrowser.BackgroundBrowser("C:/Program Files/Mozilla Firefox/firefox.exe %s"))
+    webbrowser.register('brave', webbrowser.BackgroundBrowser("C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe %s"))
+
     root.mainloop()
