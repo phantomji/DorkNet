@@ -98,8 +98,9 @@ class GoogleDorksTool:
                                command=lambda dork_query=dork: self.perform_search(dork_query))
             button.pack(pady=5)
 
+        # Update scroll region
         self.button_frame.update_idletasks()
-        self.canvas.config(scrollregion=self.button_frame.bbox("all"))
+        self.canvas.config(scrollregion=self.canvas.bbox("all"))
 
     def perform_search(self, dork):
         user_input = self.entry.get().strip()
@@ -197,15 +198,12 @@ class GoogleDorksTool:
 
     def on_mouse_wheel(self, event):
         # Scroll canvas vertically with limits
-        canvas_yview = self.canvas.yview()
         if event.delta > 0:
             # Scroll up
-            if canvas_yview[0] > 0:
-                self.canvas.yview_scroll(-1, "units")
+            self.canvas.yview_scroll(-1, "units")
         elif event.delta < 0:
             # Scroll down
-            if canvas_yview[1] < 1:
-                self.canvas.yview_scroll(1, "units")
+            self.canvas.yview_scroll(1, "units")
 
 if __name__ == "__main__":
     root = tk.Tk()
