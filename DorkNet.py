@@ -1,215 +1,216 @@
 import tkinter as tk
-from tkinter import messagebox, simpledialog, Scrollbar, Canvas, Frame, filedialog, StringVar, OptionMenu
+from tkinter import messagebox, filedialog, StringVar, OptionMenu, Text, ttk, simpledialog
 import webbrowser
-import os
+import subprocess
 
-class GoogleDorksTool:
+class DorkNetTool:
     def __init__(self, root):
         self.root = root
-        self.root.title("Google Dorks Search Tool")
-        self.root.geometry("700x750")  # Increased height for additional widgets
-        self.root.configure(bg='#000000')  # Dark background for hacker theme
-        
-        self.dorks = self.initialize_dorks()  # Initialize dorks
+        self.root.title("DorkNet - Google Dorks Search Tool")
+        self.root.geometry("1000x900")
+        self.root.configure(bg='#000000')
+
+        self.dorks = self.initialize_dorks()
         self.create_widgets()
-        self.update_buttons()
 
     def initialize_dorks(self):
-        # Initial list of Google dorks
-        return [
-            "filetype:pdf", "inurl:admin", "site:example.com", "intitle:login", "intext:password",
-            "index of", "filetype:xls", "inurl:login", "site:gov", "intext:confidential",
-            "inurl:register", "filetype:doc", "intitle:index.of", "site:edu", "intext:email",
-            "filetype:sql", "inurl:wp-admin", "site:org", "intext:database", "filetype:xml",
-            "intitle:dashboard", "inurl:search", "intext:private", "filetype:csv", "site:mil",
-            "inurl:adminlogin", "intitle:admin", "filetype:log", "inurl:secure", "intext:api",
-            "site:us", "filetype:json", "inurl:account", "intitle:files", "site:uk",
-            "inurl:login.php", "filetype:backup", "intitle:ftp", "site:ca", "intext:passwords",
-            "filetype:db", "inurl:login.aspx", "intitle:settings", "site:au", "intext:secret",
-            "filetype:bak", "inurl:admin.php", "intitle:server", "site:br", "intext:token",
-        ]
+      return {
+        "Sensitive Directories": [
+            "intitle:index.of",
+            "inurl:backup",
+            "inurl:db",
+            "inurl:config",
+            "inurl:logs",
+            "inurl:phpinfo",
+            "inurl:ftp",
+        ],
+        "File Types": [
+            "filetype:pdf",
+            "filetype:xls",
+            "filetype:doc",
+            "filetype:docx",
+            "filetype:csv",
+            "filetype:xml",
+            "filetype:sql",
+            "filetype:json",
+        ],
+        "Error Messages": [
+            "intext:sql syntax error",
+            "intext:Warning: mysql_connect()",
+            "intext:Warning: pg_connect()",
+            "intext:Warning: include()",
+            "intext:Warning: require()",
+        ],
+        "Credentials and Keys": [
+            "intext:username",
+            "intext:password",
+            "inurl:env",
+            "inurl:git",
+            "intext:API key",
+            "inurl:credentials",
+        ],
+        "Cameras and IoT": [
+            "inurl:/view/index.shtml",
+            "intitle:Live View / AXIS",
+            "intitle:Live View / Network Camera",
+            "inurl:axis-cgi",
+            "inurl:viewerframe?mode=motion",
+            "intitle:Network Camera",
+        ],
+        "Vulnerable Servers": [
+            "inurl:phpmyadmin",
+            "inurl:wp-admin",
+            "intitle:phpMyAdmin",
+            "intext:wp-config.php",
+            "inurl:sql",
+        ],
+        "Other Sensitive Information": [
+            "intext:ssn",
+            "intext:credit card",
+            "intext:CVV",
+            "intext:passport",
+            "intext:confidential",
+            "intext:proprietary",
+        ],
+        "Exploit Specific": [
+            "inurl:/proc/self/cwd",
+            "inurl:/etc/passwd",
+            "inurl:cmd.exe",
+            "inurl:wp-login.php",
+            "inurl:phpinfo.php",
+            "inurl:/cgi-bin/",
+        ],
+    }
 
+        
     def create_widgets(self):
-        # Create top frame for filter buttons
         top_frame = tk.Frame(self.root, bg='#000000')
         top_frame.pack(pady=10, padx=20, fill='x')
 
-        # Filter buttons
-        self.create_button(top_frame, "Filter Dorks", self.filter_dorks, '#ff0000')
-        self.create_button(top_frame, "Show Filetype Dorks", self.show_filetype_dorks, '#ff0000')
-        self.create_button(top_frame, "Show Non-Filetype Dorks", self.show_non_filetype_dorks, '#ff0000')
-
-        # Frame for input and result display
-        frame = tk.Frame(self.root, bg='#000000')
-        frame.pack(pady=20, padx=20, fill='both', expand=True)
-
-        # Input field for the user
-        tk.Label(frame, text="Enter name or search term:", font=("Courier", 14), bg='#000000', fg='white').pack(pady=10)
-        self.entry = tk.Entry(frame, width=60, font=("Courier", 14), borderwidth=2, relief="flat")
-        self.entry.pack(pady=10)
+        # Input for search term
+        tk.Label(top_frame, text="Enter search term:", font=("Courier", 14), bg='#000000', fg='white').pack(side="left", padx=10)
+        self.entry = tk.Entry(top_frame, width=40, font=("Courier", 14), borderwidth=2, relief="flat")
+        self.entry.pack(side="left", padx=10)
 
         # Browser selection
         self.browser_var = StringVar(value="default")
-        tk.Label(frame, text="Select browser:", font=("Courier", 14), bg='#000000', fg='white').pack(pady=10)
-        browser_menu = OptionMenu(frame, self.browser_var, "default", "chrome", "firefox", "brave")
+        tk.Label(top_frame, text="Browser:", font=("Courier", 14), bg='#000000', fg='white').pack(side="left", padx=10)
+        browser_menu = OptionMenu(top_frame, self.browser_var, "default", "chrome", "firefox", "brave")
         browser_menu.config(font=("Courier", 12), bg='#00ff00', fg='black')
-        browser_menu.pack(pady=10)
+        browser_menu.pack(side="left", padx=10)
 
-        # Canvas and scrollbar for dork buttons
-        self.canvas = Canvas(frame, bg='#000000', width=700)
-        self.scrollbar = Scrollbar(frame, orient="vertical", command=self.canvas.yview)
-        self.scrollbar.pack(side="right", fill="y")
-        self.canvas.pack(side="left", fill="both", expand=True)
-        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+        # Dork search filter
+        tk.Label(top_frame, text="Search dork:", font=("Courier", 14), bg='#000000', fg='white').pack(side="left", padx=10)
+        self.dork_search_entry = tk.Entry(top_frame, width=30, font=("Courier", 14), borderwidth=2, relief="flat")
+        self.dork_search_entry.pack(side="left", padx=10)
+        self.dork_search_entry.bind("<KeyRelease>", self.filter_dorks)
 
-        self.button_frame = tk.Frame(self.canvas, bg='#000000')
-        self.canvas.create_window((0, 0), window=self.button_frame, anchor="nw")
+        # Tabs for dork categories
+        self.tabs = ttk.Notebook(self.root)
+        self.tabs.pack(pady=10, padx=20, fill='both', expand=True)
 
-        # Bind mouse wheel event to canvas
-        self.root.bind_all("<MouseWheel>", self.on_mouse_wheel)
+        self.category_frames = {}
+        self.dork_listboxes = {}
 
-        # Button to add new dorks and upload dorks file
-        self.create_button(frame, "Add Multiple Dorks", self.add_dorks, '#00ff00')
-        self.create_button(frame, "Upload Dorks File", self.upload_dorks_file, '#00ff00')
+        for category in self.dorks.keys():
+            frame = tk.Frame(self.tabs, bg='#000000')
+            self.tabs.add(frame, text=category)
 
-        # Filter input field
-        tk.Label(frame, text="Filter dorks:", font=("Courier", 14), bg='#000000', fg='white').pack(pady=10)
-        self.filter_entry = tk.Entry(frame, width=60, font=("Courier", 14), borderwidth=2, relief="flat")
-        self.filter_entry.pack(pady=10)
+            self.category_frames[category] = frame
 
-        # Result display
-        self.result_label = tk.Label(frame, text="", font=("Courier", 12), fg="cyan", bg='#000000', wraplength=650)
-        self.result_label.pack(pady=20)
+            listbox = tk.Listbox(frame, selectmode=tk.MULTIPLE, font=("Courier", 12), bg='#000000', fg='#00ff00', height=15)
+            listbox.pack(fill='both', expand=True, padx=10, pady=10)
 
-    def create_button(self, parent, text, command, color):
-        tk.Button(parent, text=text, width=20, height=2, font=("Courier", 12),
-                  bg=color, fg='white', borderwidth=1, relief="flat", command=command).pack(pady=5)
+            for dork in self.dorks[category]:
+                listbox.insert(tk.END, dork)
 
-    def update_buttons(self, dorks_to_display=None):
-        if dorks_to_display is None:
-            dorks_to_display = sorted(self.dorks)
+            self.dork_listboxes[category] = listbox
 
-        for widget in self.button_frame.winfo_children():
-            widget.destroy()
+        # Add Dork button
+        tk.Button(self.root, text="Add More Dork", width=20, height=2, font=("Courier", 12),
+                  bg='#00ff00', fg='black', command=self.add_more_dork).pack(pady=10)
 
-        for dork in dorks_to_display:
-            button = tk.Button(self.button_frame, text=dork, width=25, height=2, font=("Courier", 12),
-                               bg='#00ff00', fg='black', borderwidth=1, relief="flat",
-                               command=lambda dork_query=dork: self.perform_search(dork_query))
-            button.pack(pady=5)
+        # Search button
+        tk.Button(self.root, text="Perform Search", width=20, height=2, font=("Courier", 12),
+                  bg='#00ff00', fg='black', command=self.perform_search).pack(pady=10)
 
-        # Update scroll region
-        self.button_frame.update_idletasks()
-        self.canvas.config(scrollregion=self.canvas.bbox("all"))
+        # Terminal output
+        terminal_frame = tk.Frame(self.root, bg='#000000')
+        terminal_frame.pack(pady=10, padx=20, fill='both', expand=True)
 
-    def perform_search(self, dork):
-        user_input = self.entry.get().strip()
-        if not user_input:
-            messagebox.showwarning("Input Error", "Please enter a name or search term.")
+        tk.Label(terminal_frame, text="Terminal Output:", font=("Courier", 14), bg='#000000', fg='white').pack(pady=10)
+
+        self.terminal = Text(terminal_frame, font=("Courier", 12), bg='#000000', fg='#00ff00', height=15)
+        self.terminal.pack(fill='both', expand=True)
+
+    def filter_dorks(self, event):
+        search_text = self.dork_search_entry.get().lower()
+        for category, listbox in self.dork_listboxes.items():
+            listbox.delete(0, tk.END)
+            for dork in self.dorks[category]:
+                if search_text in dork.lower():
+                    listbox.insert(tk.END, dork)
+
+    def add_more_dork(self):
+        category = simpledialog.askstring("Add Dork", "Enter the category (e.g., Site, InURL, Document):")
+        if not category or category not in self.dorks:
+            messagebox.showerror("Error", "Invalid category! Please enter a valid category.")
             return
 
-        query = f"{dork} {user_input}"
-        url = f"https://www.google.com/search?q={query}"
-        self.result_label.config(text=f"Search Query: {url}")
+        new_dork = simpledialog.askstring("Add Dork", "Enter the new dork:")
+        if not new_dork:
+            messagebox.showerror("Error", "Dork cannot be empty.")
+            return
 
-        # Open URL in the selected browser
+        self.dorks[category].append(new_dork)
+        self.dork_listboxes[category].insert(tk.END, new_dork)
+        self.log_to_terminal(f"Added new dork to {category}: {new_dork}")
+
+    def perform_search(self):
+        user_input = self.entry.get().strip()
+        if not user_input:
+            messagebox.showwarning("Input Error", "Please enter a search term.")
+            return
+
+        selected_queries = []
+        for category, listbox in self.dork_listboxes.items():
+            selected_indices = listbox.curselection()
+            selected_queries += [f"{self.dorks[category][i]} {user_input}" for i in selected_indices]
+
+        if not selected_queries:
+            messagebox.showwarning("Selection Error", "Please select at least one dork.")
+            return
+
+        urls = [f"https://www.google.com/search?q={query}" for query in selected_queries]
+        for url in urls:
+            self.open_url(url)
+            self.log_to_terminal(f"Opening URL: {url}")
+
+    def open_url(self, url):
         browser = self.browser_var.get()
-        if browser == "chrome":
-            self.open_in_chrome(url)
-        elif browser == "firefox":
-            self.open_in_firefox(url)
-        elif browser == "brave":
-            self.open_in_brave(url)
-        else:
-            webbrowser.open_new_tab(url)
-
-    def open_in_chrome(self, url):
         try:
-            # Update path to Chrome executable as needed
-            chrome_path = "C:/Program Files/Google/Chrome/Application/chrome.exe %s"
-            webbrowser.get(chrome_path).open_new_tab(url)
+            if browser == "chrome":
+                chrome_path = "C:/Program Files/Google/Chrome/Application/chrome.exe %s"
+                webbrowser.get(chrome_path).open_new_tab(url)
+            elif browser == "firefox":
+                firefox_path = "C:/Program Files/Mozilla Firefox/firefox.exe %s"
+                webbrowser.get(firefox_path).open_new_tab(url)
+            elif browser == "brave":
+                brave_path = "C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe %s"
+                webbrowser.get(brave_path).open_new_tab(url)
+            else:
+                webbrowser.open_new_tab(url)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open Chrome: {e}")
+            messagebox.showerror("Error", f"Failed to open browser: {e}")
 
-    def open_in_firefox(self, url):
-        try:
-            # Update path to Firefox executable as needed
-            firefox_path = "C:/Program Files/Mozilla Firefox/firefox.exe %s"
-            webbrowser.get(firefox_path).open_new_tab(url)
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to open Firefox: {e}")
-
-    def open_in_brave(self, url):
-        try:
-            # Update path to Brave executable as needed
-            brave_path = "C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe %s"
-            webbrowser.get(brave_path).open_new_tab(url)
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to open Brave: {e}")
-
-    def add_dorks(self):
-        dorks_input = simpledialog.askstring("Add Google Dorks", "Enter new Google dorks (one per line):")
-        if dorks_input:
-            new_dorks = [dork.strip() for dork in dorks_input.split('\n') if dork.strip()]
-            existing_dorks = set(self.dorks)
-            for dork in new_dorks:
-                if dork and dork not in existing_dorks:
-                    self.dorks.append(dork)
-                    existing_dorks.add(dork)
-                elif dork:
-                    messagebox.showinfo("Duplicate Dork", f"The dork '{dork}' is already in the list.")
-            self.dorks.sort()
-            self.update_buttons()
-
-    def upload_dorks_file(self):
-        initial_dir = r"B:\database"  # Set initial directory for file dialog
-        file_path = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")], initialdir=initial_dir)
-        if file_path:
-            try:
-                with open(file_path, "r") as file:
-                    new_dorks = [line.strip() for line in file if line.strip()]
-                existing_dorks = set(self.dorks)
-                for dork in new_dorks:
-                    if dork and dork not in existing_dorks:
-                        self.dorks.append(dork)
-                        existing_dorks.add(dork)
-                    elif dork:
-                        messagebox.showinfo("Duplicate Dork", f"The dork '{dork}' is already in the list.")
-                self.dorks.sort()
-                self.update_buttons()
-            except Exception as e:
-                messagebox.showerror("Error", f"Failed to read file: {e}")
-
-    def filter_dorks(self):
-        filter_text = self.filter_entry.get().strip().lower()
-        if filter_text:
-            filtered_dorks = [dork for dork in self.dorks if filter_text in dork.lower()]
-        else:
-            filtered_dorks = self.dorks
-        self.update_buttons(filtered_dorks)
-
-    def show_filetype_dorks(self):
-        filetype_dorks = [dork for dork in self.dorks if dork.startswith("filetype:")]
-        self.update_buttons(filetype_dorks)
-
-    def show_non_filetype_dorks(self):
-        non_filetype_dorks = [dork for dork in self.dorks if not dork.startswith("filetype:")]
-        self.update_buttons(non_filetype_dorks)
-
-    def on_mouse_wheel(self, event):
-        # Scroll canvas vertically with limits
-        if event.delta > 0:
-            # Scroll up
-            self.canvas.yview_scroll(-1, "units")
-        elif event.delta < 0:
-            # Scroll down
-            self.canvas.yview_scroll(1, "units")
+    def log_to_terminal(self, message):
+        self.terminal.insert(tk.END, f"{message}\n")
+        self.terminal.see(tk.END)
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = GoogleDorksTool(root)
-    
-    # Register browsers with webbrowser module
+    app = DorkNetTool(root)
+
     webbrowser.register('chrome', webbrowser.BackgroundBrowser("C:/Program Files/Google/Chrome/Application/chrome.exe %s"))
     webbrowser.register('firefox', webbrowser.BackgroundBrowser("C:/Program Files/Mozilla Firefox/firefox.exe %s"))
     webbrowser.register('brave', webbrowser.BackgroundBrowser("C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe %s"))
